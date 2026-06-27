@@ -847,12 +847,16 @@ let PRES_EDIT=[];
 function prodModal(id){
   const p=id?DB.productos.find(x=>x.id===id):{nombre:'',categoria:'Cerveza',emoji:'🍺',precioCompra:'',stock:''};
   PRES_EDIT=id?presList(p).map(pr=>({...pr})):[{nombre:'Unidad',factor:1,precioVenta:''}];
-  const cats=['Cerveza','Papas','Dulces','Gaseosas','Licores','Cigarrillos','Otros'];
+  const sugeridas=['Cerveza','Licores','Gaseosas','Agua','Jugos','Papas','Dulces','Galletas','Granos','Abarrotes','Aceites y salsas','Enlatados','Lácteos','Huevos','Pan y panadería','Café y chocolate','Aseo','Cuidado personal','Cigarrillos','Droguería','Mascotas','Frutas y verduras','Ferretería','Papelería','Otros'];
+  const cats=[...new Set([...sugeridas,...DB.productos.map(p=>p.categoria)])];
   openModal(`
   <div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">
     <h3>${id?'✏️ Editar':'➕ Nuevo'} producto</h3>
     <div class="field"><label>Nombre</label><input id="m_nombre" value="${p.nombre}"></div>
-    <div class="field"><label>Categoría</label><select id="m_cat">${cats.map(c=>`<option ${c===p.categoria?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>Categoría (elige una o escribe la tuya)</label>
+      <input id="m_cat" list="catList" value="${p.categoria||''}" placeholder="Ej: Granos, Aseo, Abarrotes...">
+      <datalist id="catList">${cats.map(c=>`<option value="${c}"></option>`).join('')}</datalist>
+    </div>
     <div class="field">
       <label>Ícono del producto (toca uno)</label>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
@@ -905,7 +909,7 @@ function saveProd(id){
   if(!nombre){toast('Pon un nombre','err');return}
   const pres=PRES_EDIT.filter(p=>(p.nombre||'').trim()&&p.precioVenta).map(p=>({nombre:p.nombre.trim(),factor:parseInt(p.factor)||1,precioVenta:parseInt(p.precioVenta)||0}));
   if(!pres.length){toast('Agrega al menos una presentación con precio','err');return}
-  const data={nombre,categoria:g('m_cat'),emoji:g('m_emoji').trim()||'📦',
+  const data={nombre,categoria:g('m_cat').trim()||'Otros',emoji:g('m_emoji').trim()||'📦',
     precioCompra:parseInt(g('m_pc'))||0,stock:parseInt(g('m_stock'))||0,presentaciones:pres};
   if(id){const ex=DB.productos.find(x=>x.id===id);delete ex.precioVenta;Object.assign(ex,data)}
   else DB.productos.push({id:uid(),...data});
