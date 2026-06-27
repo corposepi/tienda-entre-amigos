@@ -1,0 +1,14 @@
+LOGO DE LA TIENDA
+=================
+
+El sistema usa el logo en este orden:
+  1) logo.png  ← TU FOTO REAL (la del mono con la cerveza). PÉGALA AQUÍ.
+  2) logo.svg  ← versión vectorial de respaldo (ya incluida).
+
+CÓMO COLOCAR TU FOTO:
+  - Clic derecho sobre la imagen del logo -> "Guardar como"
+  - Guárdala en esta carpeta (assets) con el nombre EXACTO:  logo.png
+  - Recomendado: imagen cuadrada (ej. 1024x1024), fondo transparente o blanco.
+
+Listo: aparecerá automáticamente en el login, la barra superior y la publicidad.
+Si no guardas logo.png, se sigue viendo el logo.svg de respaldo.
