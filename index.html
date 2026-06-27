@@ -212,7 +212,9 @@ tr:last-child td{border-bottom:none}
 .emoji-pick{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow-y:auto;padding:8px;background:var(--gris);border-radius:12px;border:2px solid var(--borde)}
 .emoji-pick button{width:42px;height:42px;font-size:22px;background:#fff;border:2px solid var(--borde);border-radius:10px;line-height:1}
 .emoji-pick button.sel{border-color:var(--azul);background:#e3f2fd;transform:scale(1.05)}
-.emoji-preview{font-size:30px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:2px solid var(--borde);border-radius:12px;background:var(--gris);flex-shrink:0}
+.emoji-preview{font-size:30px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:2px solid var(--borde);border-radius:12px;background:var(--gris);flex-shrink:0;overflow:hidden}
+.picon{width:40px;height:40px;object-fit:contain;border-radius:8px;display:inline-block;vertical-align:middle}
+.piconSm{width:20px;height:20px;object-fit:contain;border-radius:4px;vertical-align:middle}
 #invTable{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .empty{text-align:center;padding:40px 20px;color:var(--suave)}
 .empty .em{font-size:48px;margin-bottom:10px}
@@ -275,13 +277,27 @@ tr:last-child td{border-bottom:none}
    Datos en localStorage. Single-file app.
 ===================================================== */
 const DB_KEY='entreamigos_db_v4';
-const APP_VER='1.2';
-const EMOJIS=['🍺','🍻','🍾','🥃','🍷','🍸','🍹','🧉','🍶','🥂','🥤','🧃','💧','☕','🧋','🧊','🍟','🥔','🌭','🍿','🥨','🥜','🍞','🥖','🧀','🥪','🍔','🌮','🌯','🥟','🍫','🍬','🍭','🍩','🍪','🧁','🍰','🍦','🍨','🍮','🍌','🍎','🍊','🍇','🍓','🍉','🥚','🥛','🧈','🚬','🔥','🧴','🧻','🧼','🪥','🔋','💊','🩹','🧯','🪒','📦','🛒','💵','🏪'];
+const APP_VER='1.3';
+const EMOJIS=[
+'🍺','🍻','🍾','🥃','🍷','🍸','🍹','🧉','🍶','🥂','🥤','🧃','🧋','🧊','💧','☕','🫖','🍵',
+'🍟','🍿','🥨','🥜','🌰','🍪','🍩','🍫','🍬','🍭','🧁','🍰','🎂','🍮','🍯','🍦','🍨','🍡',
+'🌾','🍚','🫘','🧂','🫙','🛢️','🍝','🍜','🥫',
+'🥛','🧀','🥚','🍳','🧈',
+'🍎','🍏','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥥','🥝','🍈','🫒','🥑',
+'🥔','🥕','🌽','🌶️','🫑','🥒','🥬','🥦','🧄','🧅','🍄','🥗',
+'🍗','🍖','🥩','🥓','🌭','🍔','🍕','🌮','🌯','🥪','🥙','🐔','🐟','🦐',
+'🍞','🥖','🥐','🥯','🫓','🧇','🥞',
+'🧼','🧽','🧴','🧻','🧹','🪣','🧺','🧯','🪥',
+'💊','🩹','🩺',
+'🚬','🔋','🕯️','🔧','🔨','🪛','🧰','📦','🛒','💵','🪙','🏪','🧾','✏️','📒','🔌','💡','🪫',
+'🍼','🧸','🐶','🐱','🐾','🔥'];
 const money=n=>'$'+Math.round(n).toLocaleString('es-CO');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const now=()=>new Date().toISOString();
 const fmtDate=iso=>{const d=new Date(iso);return d.toLocaleDateString('es-CO',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}
 const todayKey=iso=>new Date(iso||Date.now()).toLocaleDateString('es-CO');
+function prodIcon(p){return p&&p.img?`<img class="picon" src="${p.img}" onerror="this.replaceWith(document.createTextNode('📦'))">`:((p&&p.emoji)||'📦')}
+function prodIconSm(p){return p&&p.img?`<img class="piconSm" src="${p.img}" onerror="this.replaceWith(document.createTextNode('📦'))">`:((p&&p.emoji)||'')}
 
 /* ---------- DATA LAYER ---------- */
 function seed(){
@@ -454,7 +470,7 @@ function viewPanel(){
     </div>
 
     ${lowStock.length?`<div class="card"><h3>⚠️ Stock bajo (≤5)</h3>
-      <table><tbody>${lowStock.map(p=>`<tr><td>${p.emoji||'📦'} ${p.nombre}</td><td class="ta-r"><span class="badge ${p.stock===0?'out':'low'}">${p.stock} und</span></td></tr>`).join('')}</tbody></table></div>`:''}
+      <table><tbody>${lowStock.map(p=>`<tr><td>${prodIconSm(p)} ${p.nombre}</td><td class="ta-r"><span class="badge ${p.stock===0?'out':'low'}">${p.stock} und</span></td></tr>`).join('')}</tbody></table></div>`:''}
 
     <div class="card"><h3>🕐 Últimas ventas</h3>${ventasTabla(DB.ventas.slice(-8).reverse())}</div>
   `;
@@ -500,7 +516,7 @@ function renderProds(){
   g.innerHTML=list.map(p=>{const pres=presList(p);const multi=pres.length>1;
     return `<div class="prod-card ${p.stock<=0?'disabled':''}" onclick="tapProd('${p.id}')">
       <span class="stock-tag">${p.stock} und</span>
-      <div class="prod-emoji">${p.emoji||'📦'}</div>
+      <div class="prod-emoji">${prodIcon(p)}</div>
       <div class="pn">${p.nombre}</div>
       <div class="pp">${money(unitPrice(p))}${multi?' +':''}</div>
       <div class="ps">${multi?'📦 '+pres.length+' presentaciones':p.categoria}</div>
@@ -527,7 +543,7 @@ function addCart(id,presIdx){
   const key=id+'|'+presIdx;
   const it=POS.cart.find(c=>c.key===key);
   if(it)it.cantidad++;
-  else POS.cart.push({key,id,presIdx,nombre:p.nombre,emoji:p.emoji,presNombre:pr.nombre,factor:pr.factor,precioVenta:pr.precioVenta,precioCompra:p.precioCompra,cantidad:1});
+  else POS.cart.push({key,id,presIdx,nombre:p.nombre,emoji:p.emoji,img:p.img,presNombre:pr.nombre,factor:pr.factor,precioVenta:pr.precioVenta,precioCompra:p.precioCompra,cantidad:1});
   renderCart();toast(`+ ${p.nombre} · ${pr.nombre}`,'ok');
 }
 function changeQty(key,d){
@@ -550,7 +566,7 @@ function renderCart(){
       ${POS.cart.length?POS.cart.map(i=>`
         <div class="cart-item">
           <button class="ci-del" onclick="removeItem('${i.key}')" title="Quitar">🗑️</button>
-          <div class="ci-info"><b>${i.emoji||''} ${i.nombre}</b><span>${i.presNombre} · ${money(i.precioVenta)}${i.factor>1?` (${i.factor}u)`:''}</span></div>
+          <div class="ci-info"><b>${prodIconSm(i)} ${i.nombre}</b><span>${i.presNombre} · ${money(i.precioVenta)}${i.factor>1?` (${i.factor}u)`:''}</span></div>
           <div class="qty"><button onclick="changeQty('${i.key}',-1)">−</button><span>${i.cantidad}</span><button onclick="changeQty('${i.key}',1)">+</button></div>
           <div class="ci-sub">${money(i.precioVenta*i.cantidad)}</div>
         </div>`).join(''):'<div class="cart-empty">Toca productos para agregarlos 🍺</div>'}
@@ -694,7 +710,7 @@ function renderMesaProds(id){
   if(MESA.search.trim()){const q=MESA.search.toLowerCase();list=list.filter(p=>p.nombre.toLowerCase().includes(q))}
   g.innerHTML=list.map(p=>{const multi=presList(p).length>1;
     return `<div class="prod-card ${p.stock<=0?'disabled':''}" onclick="mesaTap('${id}','${p.id}')">
-      <span class="stock-tag">${p.stock} und</span><div class="prod-emoji">${p.emoji||'📦'}</div>
+      <span class="stock-tag">${p.stock} und</span><div class="prod-emoji">${prodIcon(p)}</div>
       <div class="pn">${p.nombre}</div><div class="pp">${money(unitPrice(p))}${multi?' +':''}</div>
       <div class="ps">${multi?'elige presentación':p.categoria}</div></div>`}).join('');
 }
@@ -711,7 +727,7 @@ function mesaAdd(cid,pid,idx){
   const c=DB.cuentas.find(x=>x.id===cid);const p=DB.productos.find(x=>x.id===pid);const pr=presList(p)[idx];
   if(mesaBaseUsed(c,pid)+pr.factor>p.stock){toast('No hay stock suficiente','err');return}
   const key=pid+'|'+idx;const it=c.items.find(i=>i.key===key);
-  if(it)it.cantidad++;else c.items.push({key,id:pid,nombre:p.nombre,emoji:p.emoji,presNombre:pr.nombre,factor:pr.factor,precioVenta:pr.precioVenta,precioCompra:p.precioCompra,cantidad:1});
+  if(it)it.cantidad++;else c.items.push({key,id:pid,nombre:p.nombre,emoji:p.emoji,img:p.img,presNombre:pr.nombre,factor:pr.factor,precioVenta:pr.precioVenta,precioCompra:p.precioCompra,cantidad:1});
   save();renderMesaCart(cid);toast('+ '+p.nombre,'ok');
 }
 function mesaQty(cid,key,d){
@@ -730,7 +746,7 @@ function renderMesaCart(id){
     <div class="cart-body">
       ${c.items.length?c.items.map(i=>`<div class="cart-item">
         <button class="ci-del" onclick="mesaRemove('${id}','${i.key}')" title="Quitar">🗑️</button>
-        <div class="ci-info"><b>${i.emoji||''} ${i.nombre}</b><span>${i.presNombre} · ${money(i.precioVenta)}</span></div>
+        <div class="ci-info"><b>${prodIconSm(i)} ${i.nombre}</b><span>${i.presNombre} · ${money(i.precioVenta)}</span></div>
         <div class="qty"><button onclick="mesaQty('${id}','${i.key}',-1)">−</button><span>${i.cantidad}</span><button onclick="mesaQty('${id}','${i.key}',1)">+</button></div>
         <div class="ci-sub">${money(i.precioVenta*i.cantidad)}</div></div>`).join(''):'<div class="cart-empty">Agrega lo que vayan pidiendo 🍺</div>'}
     </div>
@@ -838,7 +854,7 @@ function renderInv(){
   t.innerHTML=`<table><thead><tr><th>Producto</th><th class="ta-r">Compra/u</th><th>Presentaciones · venta</th><th class="ta-c">Stock</th><th></th></tr></thead><tbody>
     ${list.map(p=>{const pres=presList(p);
       return `<tr>
-      <td><b>${p.emoji||'📦'} ${p.nombre}</b><br><span class="badge cat">${p.categoria}</span></td>
+      <td><b>${prodIconSm(p)} ${p.nombre}</b><br><span class="badge cat">${p.categoria}</span></td>
       <td class="ta-r muted">${money(p.precioCompra)}</td>
       <td style="font-size:12px;line-height:1.7">${pres.map(pr=>{const m=pr.precioVenta-p.precioCompra*pr.factor;return `${pr.nombre}${pr.factor>1?` <span class="muted">(${pr.factor}u)</span>`:''}: <b style="color:var(--verde)">${money(pr.precioVenta)}</b> <span style="color:${m>=0?'var(--suave)':'var(--rojo)'}">· util ${money(m)}</span>`}).join('<br>')}</td>
       <td class="ta-c"><span class="badge ${p.stock===0?'out':p.stock<=5?'low':'ok'}">${p.stock}</span></td>
@@ -861,12 +877,14 @@ function prodModal(id){
       <datalist id="catList">${cats.map(c=>`<option value="${c}"></option>`).join('')}</datalist>
     </div>
     <div class="field">
-      <label>Ícono del producto (toca uno)</label>
+      <label>Ícono del producto</label>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <div class="emoji-preview" id="emojiPreview">${p.emoji||'📦'}</div>
-        <input id="m_emoji" value="${p.emoji||''}" maxlength="3" placeholder="o escribe/pega un emoji" style="flex:1" oninput="document.getElementById('emojiPreview').textContent=this.value||'📦';markEmoji(this.value)">
+        <div class="emoji-preview" id="emojiPreview"></div>
+        <input id="m_emoji" value="${p.emoji||''}" maxlength="3" placeholder="emoji" style="flex:1" oninput="markEmoji(this.value);updIconPreview()">
       </div>
       <div class="emoji-pick" id="emojiPick"></div>
+      <input id="m_img" value="${p.img||''}" placeholder="🔗 o pega el link de una foto (https://...)" style="width:100%;margin-top:8px;padding:10px;border:2px solid var(--borde);border-radius:10px;font-size:12px" oninput="updIconPreview()">
+      <div style="font-size:11px;color:var(--suave);margin-top:4px">Elige un emoji arriba o pega el link de una foto del producto. La foto manda si la pones (no ocupa espacio en tu equipo).</div>
     </div>
     <div style="display:flex;gap:10px">
       <div class="field" style="flex:1"><label>Compra (por unidad)</label><input id="m_pc" inputmode="numeric" value="${p.precioCompra}"></div>
@@ -882,6 +900,7 @@ function prodModal(id){
     </div>
   </div></div>`);
   renderEmojiPick(p.emoji||'📦');
+  updIconPreview();
   renderPres();
 }
 function renderEmojiPick(cur){
@@ -890,10 +909,17 @@ function renderEmojiPick(cur){
 }
 function pickEmoji(e){
   document.getElementById('m_emoji').value=e;
-  document.getElementById('emojiPreview').textContent=e;
-  markEmoji(e);
+  const im=document.getElementById('m_img');if(im)im.value='';
+  markEmoji(e);updIconPreview();
 }
 function markEmoji(e){document.querySelectorAll('#emojiPick button').forEach(b=>b.classList.toggle('sel',b.textContent===e))}
+function updIconPreview(){
+  const prev=document.getElementById('emojiPreview');if(!prev)return;
+  const img=(document.getElementById('m_img').value||'').trim();
+  const em=(document.getElementById('m_emoji').value||'').trim()||'📦';
+  if(img){prev.innerHTML=`<img src="${img}" style="width:100%;height:100%;object-fit:contain" onerror="this.replaceWith(document.createTextNode('🖼️'))">`}
+  else{prev.textContent=em}
+}
 function renderPres(){
   const el=document.getElementById('presList');if(!el)return;
   el.innerHTML=PRES_EDIT.map((pr,i)=>`
@@ -912,7 +938,7 @@ function saveProd(id){
   if(!nombre){toast('Pon un nombre','err');return}
   const pres=PRES_EDIT.filter(p=>(p.nombre||'').trim()&&p.precioVenta).map(p=>({nombre:p.nombre.trim(),factor:parseInt(p.factor)||1,precioVenta:parseInt(p.precioVenta)||0}));
   if(!pres.length){toast('Agrega al menos una presentación con precio','err');return}
-  const data={nombre,categoria:g('m_cat').trim()||'Otros',emoji:g('m_emoji').trim()||'📦',
+  const data={nombre,categoria:g('m_cat').trim()||'Otros',emoji:g('m_emoji').trim()||'📦',img:(g('m_img')||'').trim(),
     precioCompra:parseInt(g('m_pc'))||0,stock:parseInt(g('m_stock'))||0,presentaciones:pres};
   if(id){const ex=DB.productos.find(x=>x.id===id);delete ex.precioVenta;Object.assign(ex,data)}
   else DB.productos.push({id:uid(),...data});
@@ -1152,7 +1178,7 @@ function renderQuick(){
   const list=DB.productos.filter(p=>QCALC.cat==='Todos'||p.categoria===QCALC.cat);
   g.innerHTML=list.map(p=>{const multi=presList(p).length>1;
     return `<div class="prod-card" onclick="qcTap('${p.id}')">
-      <div class="prod-emoji">${p.emoji||'📦'}</div>
+      <div class="prod-emoji">${prodIcon(p)}</div>
       <div class="pn">${p.nombre}</div>
       <div class="pp">${money(qcUnit(p))}${multi?' +':''}</div>
       <div class="ps">${multi?'elige presentación':p.categoria}</div>
@@ -1168,7 +1194,7 @@ function qcTap(id){
     ${pres.map((pr,i)=>`<button class="btn btn-amarillo" style="width:100%;justify-content:space-between;margin-bottom:8px" onclick="qcAdd('${id}',${i});closeModal()"><span style="text-align:left">${pr.nombre}${pr.factor>1?` · ${pr.factor} und`:''}</span><b style="font-size:16px">${money(pr.precioVenta)}</b></button>`).join('')}
     <button class="btn btn-gris" style="width:100%" onclick="closeModal()">Cerrar</button></div></div>`);
 }
-function qcAdd(id,i){const p=DB.productos.find(x=>x.id===id);const pr=presList(p)[i];QCALC.items.push({nombre:p.nombre,emoji:p.emoji,presNombre:pr.nombre,precio:pr.precioVenta});renderQcTicket();toast('+ '+money(pr.precioVenta),'ok')}
+function qcAdd(id,i){const p=DB.productos.find(x=>x.id===id);const pr=presList(p)[i];QCALC.items.push({nombre:p.nombre,emoji:p.emoji,img:p.img,presNombre:pr.nombre,precio:pr.precioVenta});renderQcTicket();toast('+ '+money(pr.precioVenta),'ok')}
 function qcRemove(idx){QCALC.items.splice(idx,1);renderQcTicket()}
 function qcClear(){QCALC.items=[];QCALC.pago=0;renderQcTicket()}
 function qcTotal(){return QCALC.items.reduce((s,i)=>s+i.precio,0)}
@@ -1178,7 +1204,7 @@ function renderQcTicket(){
   el.innerHTML=`
    ${QCALC.items.length?`<div style="border:2px solid var(--borde);border-radius:12px;overflow:hidden;margin-bottom:10px">
       ${QCALC.items.map((it,idx)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--gris-2)">
-        <span style="flex:1;font-size:13px;font-weight:700">${it.emoji||''} ${it.nombre} ${it.presNombre&&it.presNombre!=='Unidad'?`<span class="muted">· ${it.presNombre}</span>`:''}</span>
+        <span style="flex:1;font-size:13px;font-weight:700">${prodIconSm(it)} ${it.nombre} ${it.presNombre&&it.presNombre!=='Unidad'?`<span class="muted">· ${it.presNombre}</span>`:''}</span>
         <b style="color:var(--verde)">${money(it.precio)}</b>
         <button class="ci-del" onclick="qcRemove(${idx})" title="Quitar">🗑️</button></div>`).join('')}
    </div>`:'<div class="muted" style="text-align:center;padding:14px">Toca productos arriba para ir sumando 🍺</div>'}

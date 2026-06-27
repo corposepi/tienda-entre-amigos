@@ -104,6 +104,8 @@ const money=n=>'$'+Math.round(n).toLocaleString('es-CO');
 let PRODUCTOS=[], CAT='Todos', CART=[];
 
 function presList(p){return p.presentaciones&&p.presentaciones.length?p.presentaciones:[{nombre:'Unidad',factor:1,precioVenta:p.precioVenta||0}]}
+function picon(p){return p&&p.img?`<img src="${p.img}" style="width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.replaceWith(document.createTextNode('📦'))">`:((p&&p.emoji)||'📦')}
+function piconSm(p){return p&&p.img?`<img src="${p.img}" style="width:20px;height:20px;object-fit:contain;border-radius:4px;vertical-align:middle" onerror="this.replaceWith(document.createTextNode('📦'))">`:((p&&p.emoji)||'')}
 
 async function init(){
   try{
@@ -128,7 +130,7 @@ function renderGrid(){
   g.innerHTML='<div class="grid">'+list.map((p,i)=>{
     const idx=PRODUCTOS.indexOf(p);const pres=presList(p);const multi=pres.length>1;const off=p.stock<=0;
     return `<div class="card ${off?'off':''}">
-      <div class="em">${p.emoji||'📦'}</div>
+      <div class="em">${picon(p)}</div>
       <div class="n">${p.nombre}</div>
       <div class="p">${money(pres[0].precioVenta)}${multi?' +':''}</div>
       <div class="c">${off?'Agotado':p.categoria}</div>
@@ -145,7 +147,7 @@ function tap(idx){
 function add(idx,pi){
   const p=PRODUCTOS[idx];const pr=presList(p)[pi];const key=idx+'|'+pi;
   const it=CART.find(c=>c.key===key);
-  if(it)it.cant++;else CART.push({key,nombre:p.nombre,emoji:p.emoji,pres:pr.nombre,factor:pr.factor,precio:pr.precioVenta,cant:1});
+  if(it)it.cant++;else CART.push({key,nombre:p.nombre,emoji:p.emoji,img:p.img,pres:pr.nombre,factor:pr.factor,precio:pr.precioVenta,cant:1});
   updBar();toast('Agregado al pedido 🛒');
 }
 function changeQ(key,d){const it=CART.find(c=>c.key===key);if(!it)return;it.cant+=d;if(it.cant<=0)CART=CART.filter(c=>c.key!==key);updBar();renderCartItems();}
@@ -175,7 +177,7 @@ function renderCartItems(){
   const el=document.getElementById('cartItems');if(!el)return;
   if(!CART.length){el.innerHTML='<p style="color:var(--suave);text-align:center;padding:20px">Tu pedido está vacío</p>';const t=document.getElementById('ctTotal');if(t)t.textContent=money(0);updBar();return}
   el.innerHTML=CART.map(i=>`<div class="citem">
-    <div class="ci"><b>${i.emoji||''} ${i.nombre}</b><span>${i.pres} · ${money(i.precio)}</span></div>
+    <div class="ci"><b>${piconSm(i)} ${i.nombre}</b><span>${i.pres} · ${money(i.precio)}</span></div>
     <div class="qty"><button onclick="changeQ('${i.key}',-1)">−</button><span>${i.cant}</span><button onclick="changeQ('${i.key}',1)">+</button></div>
     <div class="sub">${money(i.precio*i.cant)}</div></div>`).join('');
   const t=document.getElementById('ctTotal');if(t)t.textContent=money(total());
