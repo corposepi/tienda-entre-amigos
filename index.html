@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Entre Amigos · Sistema de Tienda</title>
-<meta name="theme-color" content="#1565c0">
+<meta name="theme-color" content="#0d47a1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Entre Amigos">
 <style>
 :root{
   --azul:#1565c0; --azul-osc:#0d47a1; --azul-claro:#42a5f5;
@@ -115,7 +122,8 @@ tr:last-child td{border-bottom:none}
 
 /* ====== POS ====== */
 .pos-wrap{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start}
-@media(max-width:880px){.pos-wrap{grid-template-columns:1fr}}
+.pos-wrap>*{min-width:0}
+@media(max-width:880px){.pos-wrap{grid-template-columns:1fr}.cart{position:static}}
 .pos-search{display:flex;gap:8px;margin-bottom:12px}
 .pos-search input{flex:1;padding:12px 14px;border:2px solid var(--borde);border-radius:12px}
 .cat-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:none}
@@ -1302,6 +1310,7 @@ function resetDemo(){confirmBox('¿Borrar TODOS los datos y volver al demo?',()=
 /* ---------- INIT ---------- */
 document.getElementById('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 (async()=>{ renderLoginUsers(); await cloudInit(); renderLoginUsers(); })();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 </script>
 </body>
 </html>
