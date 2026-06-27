@@ -244,6 +244,7 @@ tr:last-child td{border-bottom:none}
     <button class="btn btn-primary" onclick="doLogin()">Ingresar 🍺</button>
     <div class="hint" id="loginHint"></div>
     <a href="pedir.html" style="display:block;margin-top:14px;padding:12px;border-radius:12px;background:#25D366;color:#fff;font-weight:800;text-decoration:none;font-size:14px">🛵 ¿Eres cliente? Pedir a domicilio</a>
+    <div id="appVer" style="font-size:10px;color:#9aa7b8;margin-top:10px"></div>
   </div>
 </div>
 
@@ -274,6 +275,7 @@ tr:last-child td{border-bottom:none}
    Datos en localStorage. Single-file app.
 ===================================================== */
 const DB_KEY='entreamigos_db_v4';
+const APP_VER='1.2';
 const EMOJIS=['🍺','🍻','🍾','🥃','🍷','🍸','🍹','🧉','🍶','🥂','🥤','🧃','💧','☕','🧋','🧊','🍟','🥔','🌭','🍿','🥨','🥜','🍞','🥖','🧀','🥪','🍔','🌮','🌯','🥟','🍫','🍬','🍭','🍩','🍪','🧁','🍰','🍦','🍨','🍮','🍌','🍎','🍊','🍇','🍓','🍉','🥚','🥛','🧈','🚬','🔥','🧴','🧻','🧼','🪥','🔋','💊','🩹','🧯','🪒','📦','🛒','💵','🏪'];
 const money=n=>'$'+Math.round(n).toLocaleString('es-CO');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -368,6 +370,7 @@ function renderLoginUsers(){
   const sel=document.getElementById('loginUser');
   sel.innerHTML=DB.usuarios.map(u=>`<option value="${u.id}">${u.nombre} (${u.rol})</option>`).join('');
   document.getElementById('loginHint').innerHTML=(CLOUD?'☁️ <b>Conectado a la nube</b> · ':'')+'Ingresa tu PIN para continuar 🍺';
+  const av=document.getElementById('appVer');if(av)av.textContent='Versión '+APP_VER;
 }
 function doLogin(){
   const id=document.getElementById('loginUser').value;
