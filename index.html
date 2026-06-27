@@ -243,6 +243,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <button class="btn btn-primary" onclick="doLogin()">Ingresar 🍺</button>
     <div class="hint" id="loginHint"></div>
+    <a href="pedir.html" style="display:block;margin-top:14px;padding:12px;border-radius:12px;background:#25D366;color:#fff;font-weight:800;text-decoration:none;font-size:14px">🛵 ¿Eres cliente? Pedir a domicilio</a>
   </div>
 </div>
 
@@ -1198,7 +1199,17 @@ function calcPct(){CALC.cur=String(parseFloat(CALC.cur)/100);updCalc()}
 function viewPublicidad(){
   document.getElementById('view').innerHTML=`
     <div class="section-title">📢 Publicidad y marca</div>
-    <p class="muted" style="margin-bottom:14px;font-size:13px">Material listo para imprimir o compartir por WhatsApp. Toca "Imprimir" para guardar como PDF o imprimir físico.</p>
+
+    <div class="card" style="border:2px solid #25D366">
+      <h3>🛵 Link de pedidos a domicilio</h3>
+      <p class="muted" style="font-size:13px">Comparte este link con tus clientes (estados de WhatsApp, redes, etc.). Ellos arman su pedido y te llega al <b>312 777 4605</b>.</p>
+      <input id="domiLink" readonly style="width:100%;padding:11px;border:2px solid var(--borde);border-radius:10px;font-size:12px;margin:10px 0;background:#fbfcfe" value="">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-verde btn-sm" onclick="shareDomi()">📲 Compartir link</button>
+        <button class="btn btn-gris btn-sm" onclick="copyDomi()">📋 Copiar link</button>
+        <button class="btn btn-amarillo btn-sm" onclick="window.open(domiURL(),'_blank')">👁️ Ver página</button>
+      </div>
+    </div>
 
     <div class="card" style="text-align:center" id="flyer">
       <div style="background:linear-gradient(145deg,#1976d2,#0d47a1);border-radius:20px;padding:28px 20px;color:#fff">
@@ -1235,7 +1246,11 @@ Cervezas bien frías 🍺, papas 🍟, dulces 🍫, gaseosas 🥤 y más.
       <h3>🖼️ Logo de la tienda</h3>
       <p class="muted" style="font-size:13px">Para usar tu foto real, guárdala como <b>logo.png</b> dentro de la carpeta <b>assets/</b>. Si no existe, se muestra la versión vectorial <b>logo.svg</b>.</p>
     </div>`;
+  const dl=document.getElementById('domiLink');if(dl)dl.value=domiURL();
 }
+function domiURL(){return location.origin+location.pathname.replace(/[^/]*$/,'pedir.html')}
+function copyDomi(){navigator.clipboard.writeText(domiURL()).then(()=>toast('Link copiado','ok'))}
+function shareDomi(){const msg='🛵 Pide a domicilio en *Entre Amigos* 🍺🐵\nArma tu pedido aquí:\n'+domiURL();window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank')}
 function shareWA(){const t=encodeURIComponent(document.getElementById('waMsg').value);window.open('https://wa.me/?text='+t,'_blank')}
 function copyWA(){navigator.clipboard.writeText(document.getElementById('waMsg').value).then(()=>toast('Texto copiado','ok'))}
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(i);i.onerror=rej;i.src=src+'?'+Date.now()})}
