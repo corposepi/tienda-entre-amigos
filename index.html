@@ -246,6 +246,7 @@ tr:last-child td{border-bottom:none}
       <span id="userLabel"></span>
     </div>
     <span class="rolepill" id="rolePill"></span>
+    <span id="cloudDot" title="Sincronización en la nube" style="font-size:14px"></span>
     <button class="icon-btn" onclick="logout()" title="Salir">⏻</button>
   </div>
 
@@ -256,6 +257,7 @@ tr:last-child td{border-bottom:none}
 
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =====================================================
    ENTRE AMIGOS · Sistema de Tienda (POS + Contabilidad)
@@ -303,7 +305,45 @@ function seed(){
 let DB=load();
 if(!DB.cuentas)DB.cuentas=[];
 function load(){try{const r=localStorage.getItem(DB_KEY);return r?JSON.parse(r):seed()}catch(e){return seed()}}
-function save(){localStorage.setItem(DB_KEY,JSON.stringify(DB))}
+
+/* ---------- SUPABASE (nube) ---------- */
+const SUPA_URL='https://vslaiticcxwcikapwjis.supabase.co';
+const SUPA_KEY='sb_publishable_6UedTQBt2V92i_hp-G2AlQ_FY-H3PKO';
+let sb=null, CLOUD=false, _saveT=null;
+function stable(o){return JSON.stringify(o,(k,v)=>{if(v&&typeof v==='object'&&!Array.isArray(v)){return Object.keys(v).sort().reduce((a,key)=>{a[key]=v[key];return a},{})}return v})}
+function setCloudUI(){
+  const d=document.getElementById('cloudDot');if(d)d.textContent=CLOUD?'☁️':'';
+  const h=document.getElementById('loginHint');if(h&&!SESSION)h.innerHTML=(CLOUD?'☁️ <b>Conectado a la nube</b> · ':'📴 Modo local · ')+'Ingresa tu PIN 🍺';
+}
+async function cloudInit(){
+  if(!window.supabase||!SUPA_URL)return false;
+  try{
+    sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    const {data,error}=await sb.from('tienda_data').select('data').eq('id',1).maybeSingle();
+    if(error)throw error;
+    if(data&&data.data){DB=data.data;if(!DB.cuentas)DB.cuentas=[];localStorage.setItem(DB_KEY,JSON.stringify(DB));}
+    else{await sb.from('tienda_data').upsert({id:1,data:DB,updated_at:new Date().toISOString()});}
+    CLOUD=true;
+    sb.channel('tienda_rt').on('postgres_changes',{event:'*',schema:'public',table:'tienda_data',filter:'id=eq.1'},payload=>{
+      const nd=payload.new&&payload.new.data;if(!nd)return;
+      if(stable(nd)===stable(DB))return;
+      DB=nd;if(!DB.cuentas)DB.cuentas=[];localStorage.setItem(DB_KEY,JSON.stringify(DB));
+      onCloudUpdate();
+    }).subscribe();
+    setCloudUI();
+    return true;
+  }catch(e){console.warn('Supabase no disponible, usando modo local:',e&&e.message);CLOUD=false;setCloudUI();return false}
+}
+function onCloudUpdate(){
+  if(document.getElementById('modalHost'))return;
+  if(SESSION){if(CUR)go(CUR)}else{renderLoginUsers()}
+}
+function save(){
+  localStorage.setItem(DB_KEY,JSON.stringify(DB));
+  if(CLOUD&&sb){clearTimeout(_saveT);_saveT=setTimeout(()=>{
+    sb.from('tienda_data').upsert({id:1,data:DB,updated_at:new Date().toISOString()}).then(r=>{if(r.error)console.warn('cloudSave',r.error.message)});
+  },500);}
+}
 
 let SESSION=null, POS={cart:[],cat:'Todos',search:'',pago:0,metodo:'Efectivo'};
 
@@ -311,7 +351,7 @@ let SESSION=null, POS={cart:[],cat:'Todos',search:'',pago:0,metodo:'Efectivo'};
 function renderLoginUsers(){
   const sel=document.getElementById('loginUser');
   sel.innerHTML=DB.usuarios.map(u=>`<option value="${u.id}">${u.nombre} (${u.rol})</option>`).join('');
-  document.getElementById('loginHint').innerHTML='Ingresa tu PIN para continuar 🍺';
+  document.getElementById('loginHint').innerHTML=(CLOUD?'☁️ <b>Conectado a la nube</b> · ':'')+'Ingresa tu PIN para continuar 🍺';
 }
 function doLogin(){
   const id=document.getElementById('loginUser').value;
@@ -325,6 +365,7 @@ function doLogin(){
   document.getElementById('app').style.display='block';
   document.getElementById('userLabel').textContent=u.nombre;
   document.getElementById('rolePill').textContent=u.rol;
+  setCloudUI();
   buildTabs();
   go(u.rol==='admin'?'panel':'pos');
 }
@@ -1259,8 +1300,8 @@ function dl(content,name,type){const b=new Blob([content],{type});const a=docume
 function resetDemo(){confirmBox('¿Borrar TODOS los datos y volver al demo?',()=>{localStorage.removeItem(DB_KEY);DB=seed();save();toast('Datos reiniciados','ok');go('panel')})}
 
 /* ---------- INIT ---------- */
-renderLoginUsers();
 document.getElementById('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+(async()=>{ renderLoginUsers(); await cloudInit(); renderLoginUsers(); })();
 </script>
 </body>
 </html>
