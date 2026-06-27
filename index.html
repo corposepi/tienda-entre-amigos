@@ -319,7 +319,8 @@ function load(){try{const r=localStorage.getItem(DB_KEY);return r?JSON.parse(r):
 /* ---------- SUPABASE (nube) ---------- */
 const SUPA_URL='https://vslaiticcxwcikapwjis.supabase.co';
 const SUPA_KEY='sb_publishable_6UedTQBt2V92i_hp-G2AlQ_FY-H3PKO';
-let sb=null, CLOUD=false, _saveT=null;
+const CLIENT_ID='c'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+let sb=null, CLOUD=false, _saveT=null, OPEN_CUENTA=null;
 function stable(o){return JSON.stringify(o,(k,v)=>{if(v&&typeof v==='object'&&!Array.isArray(v)){return Object.keys(v).sort().reduce((a,key)=>{a[key]=v[key];return a},{})}return v})}
 function setCloudUI(){
   const d=document.getElementById('cloudDot');if(d)d.textContent=CLOUD?'☁️':'';
@@ -332,10 +333,11 @@ async function cloudInit(){
     const {data,error}=await sb.from('tienda_data').select('data').eq('id',1).maybeSingle();
     if(error)throw error;
     if(data&&data.data){DB=data.data;if(!DB.cuentas)DB.cuentas=[];localStorage.setItem(DB_KEY,JSON.stringify(DB));}
-    else{await sb.from('tienda_data').upsert({id:1,data:DB,updated_at:new Date().toISOString()});}
+    else{DB.__w=CLIENT_ID;await sb.from('tienda_data').upsert({id:1,data:DB,updated_at:new Date().toISOString()});}
     CLOUD=true;
     sb.channel('tienda_rt').on('postgres_changes',{event:'*',schema:'public',table:'tienda_data',filter:'id=eq.1'},payload=>{
       const nd=payload.new&&payload.new.data;if(!nd)return;
+      if(nd.__w===CLIENT_ID)return;            // ignorar mi propio cambio (evita revertir/sacar)
       if(stable(nd)===stable(DB))return;
       DB=nd;if(!DB.cuentas)DB.cuentas=[];localStorage.setItem(DB_KEY,JSON.stringify(DB));
       onCloudUpdate();
@@ -346,9 +348,13 @@ async function cloudInit(){
 }
 function onCloudUpdate(){
   if(document.getElementById('modalHost'))return;
-  if(SESSION){if(CUR)go(CUR)}else{renderLoginUsers()}
+  if(SESSION){
+    if(OPEN_CUENTA && DB.cuentas.find(c=>c.id===OPEN_CUENTA&&c.abierta)){abrirCuenta(OPEN_CUENTA)}
+    else if(CUR)go(CUR);
+  }else{renderLoginUsers()}
 }
 function save(){
+  DB.__w=CLIENT_ID;
   localStorage.setItem(DB_KEY,JSON.stringify(DB));
   if(CLOUD&&sb){clearTimeout(_saveT);_saveT=setTimeout(()=>{
     sb.from('tienda_data').upsert({id:1,data:DB,updated_at:new Date().toISOString()}).then(r=>{if(r.error)console.warn('cloudSave',r.error.message)});
@@ -396,7 +402,7 @@ function buildTabs(){
   t.innerHTML=TABS[SESSION.rol].map(([k,l])=>`<button class="tab" data-k="${k}" onclick="go('${k}')">${l}</button>`).join('');
 }
 function go(k){
-  CUR=k;
+  CUR=k;OPEN_CUENTA=null;
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
   const v=document.getElementById('view');
   v.innerHTML='';
@@ -658,7 +664,7 @@ function crearCuenta(){
   DB.cuentas.push(c);save();closeModal();abrirCuenta(c.id);
 }
 function abrirCuenta(id){
-  CUR='mesas';
+  CUR='mesas';OPEN_CUENTA=id;
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.k==='mesas'));
   const c=DB.cuentas.find(x=>x.id===id);if(!c){viewMesas();return}
   const cats=['Todos',...new Set(DB.productos.map(p=>p.categoria))];
@@ -813,7 +819,10 @@ let invSearch='';
 function viewInventario(){
   document.getElementById('view').innerHTML=`
     <div class="flex-between"><div class="section-title" style="margin:0">📦 Inventario</div>
-      <button class="btn btn-amarillo btn-sm" onclick="prodModal()">+ Nuevo producto</button></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-gris btn-sm" onclick="listaPreciosPDF()">🖨️ Lista de precios</button>
+        <button class="btn btn-amarillo btn-sm" onclick="prodModal()">+ Nuevo</button>
+      </div></div>
     <div class="search-bar"><input id="invSearch" placeholder="🔍 Buscar..." value="${invSearch}" oninput="invSearch=this.value;renderInv()"></div>
     <div class="card" style="padding:6px 14px"><div id="invTable"></div></div>`;
   renderInv();
@@ -1311,6 +1320,45 @@ let toastT;
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+(type||'');
   clearTimeout(toastT);toastT=setTimeout(()=>t.className='',2200)}
 
+function listaPreciosPDF(){
+  const logo=location.href.split('?')[0].replace(/[^/]*$/,'assets/logo.png');
+  const cats={};DB.productos.forEach(p=>{(cats[p.categoria]=cats[p.categoria]||[]).push(p)});
+  let body='';
+  Object.keys(cats).forEach(cat=>{
+    body+=`<tr class="cat"><td colspan="2">${cat}</td></tr>`;
+    cats[cat].forEach(p=>{
+      const pres=presList(p);
+      const precio=pres.length===1?money(pres[0].precioVenta)
+        :pres.map(pr=>`${pr.nombre.replace('Canasta / Cava','Cava')}: ${money(pr.precioVenta)}`).join('<br>');
+      body+=`<tr><td class="nm">${p.emoji||''} ${p.nombre}</td><td class="pr">${precio}</td></tr>`;
+    });
+  });
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios - Entre Amigos</title>
+  <style>
+   *{font-family:Arial,Helvetica,sans-serif;margin:0;padding:0;box-sizing:border-box}
+   body{padding:24px;color:#111}
+   .head{text-align:center;margin-bottom:16px;border-bottom:4px solid #0d47a1;padding-bottom:12px}
+   .head img{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #ffd400}
+   .head h1{color:#0d47a1;font-size:26px;margin-top:6px;letter-spacing:1px}
+   .head p{color:#e53935;font-weight:bold;font-size:15px;margin-top:2px}
+   table{width:100%;border-collapse:collapse;font-size:17px}
+   td{padding:9px 8px;border-bottom:1px solid #ddd;vertical-align:top}
+   tr.cat td{background:#0d47a1;color:#fff;font-weight:bold;font-size:14px;text-transform:uppercase;letter-spacing:1px;padding:7px 8px}
+   td.nm{font-weight:600}
+   td.pr{text-align:right;color:#1b7a1b;font-weight:bold;white-space:nowrap}
+   .foot{text-align:center;margin-top:16px;color:#777;font-size:12px}
+   @media print{body{padding:6px}.noprint{display:none}}
+  </style></head><body>
+   <div class="head"><img src="${logo}" onerror="this.style.display='none'"><h1>ENTRE AMIGOS</h1><p>LISTA DE PRECIOS &middot; 312 777 4605</p></div>
+   <table>${body}</table>
+   <p class="foot">Precios sujetos a cambio sin previo aviso &middot; ${todayKey()}</p>
+   <button class="noprint" onclick="window.print()" style="display:block;margin:18px auto;padding:12px 26px;background:#0d47a1;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
+   <script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  if(!w){toast('Permite ventanas emergentes para imprimir','err');return}
+  w.document.write(html);w.document.close();
+}
 function exportCSV(){
   let rows=[['Fecha','Vendedor','Producto','Cantidad','PrecioVenta','Subtotal','Metodo','Total venta','Pago','Vuelta']];
   DB.ventas.forEach(v=>v.items.forEach(i=>{
