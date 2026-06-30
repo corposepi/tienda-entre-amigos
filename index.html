@@ -277,7 +277,7 @@ tr:last-child td{border-bottom:none}
    Datos en localStorage. Single-file app.
 ===================================================== */
 const DB_KEY='entreamigos_db_v4';
-const APP_VER='1.5';
+const APP_VER='1.6';
 const EMOJIS=[
 '🍺','🍻','🍾','🥃','🍷','🍸','🍹','🧉','🍶','🥂','🥤','🧃','🧋','🧊','💧','☕','🫖','🍵',
 '🍟','🍿','🥨','🥜','🌰','🍪','🍩','🍫','🍬','🍭','🧁','🍰','🎂','🍮','🍯','🍦','🍨','🍡',
@@ -1363,7 +1363,8 @@ function listaPreciosPDF(){
       const pres=presList(p);
       const precio=pres.length===1?money(pres[0].precioVenta)
         :pres.map(pr=>`${pr.nombre.replace('Canasta / Cava','Cava')}: ${money(pr.precioVenta)}`).join('<br>');
-      body+=`<tr><td class="nm">${p.emoji||''} ${p.nombre}</td><td class="pr">${precio}</td></tr>`;
+      const ic=p.img?`<img src="${p.img}" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:8px;border-radius:5px">`:`<span style="margin-right:6px;font-size:20px">${p.emoji||''}</span>`;
+      body+=`<tr><td class="nm">${ic}${p.nombre}</td><td class="pr">${precio}</td></tr>`;
     });
   });
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios - Entre Amigos</title>
@@ -1386,7 +1387,7 @@ function listaPreciosPDF(){
    <table>${body}</table>
    <p class="foot">Precios sujetos a cambio sin previo aviso &middot; ${todayKey()}</p>
    <button class="noprint" onclick="window.print()" style="display:block;margin:18px auto;padding:12px 26px;background:#0d47a1;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer">🖨️ Imprimir / Guardar PDF</button>
-   <script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script>
+   <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},700)})<\/script>
   </body></html>`;
   const w=window.open('','_blank');
   if(!w){toast('Permite ventanas emergentes para imprimir','err');return}
