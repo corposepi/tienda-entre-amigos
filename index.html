@@ -277,7 +277,7 @@ tr:last-child td{border-bottom:none}
    Datos en localStorage. Single-file app.
 ===================================================== */
 const DB_KEY='entreamigos_db_v4';
-const APP_VER='1.4';
+const APP_VER='1.5';
 const EMOJIS=[
 '🍺','🍻','🍾','🥃','🍷','🍸','🍹','🧉','🍶','🥂','🥤','🧃','🧋','🧊','💧','☕','🫖','🍵',
 '🍟','🍿','🥨','🥜','🌰','🍪','🍩','🍫','🍬','🍭','🧁','🍰','🎂','🍮','🍯','🍦','🍨','🍡',
@@ -1407,7 +1407,11 @@ function resetDemo(){confirmBox('¿Borrar TODOS los datos y volver al demo?',()=
 /* ---------- INIT ---------- */
 document.getElementById('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 (async()=>{ renderLoginUsers(); await cloudInit(); renderLoginUsers(); })();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+if('serviceWorker' in navigator){
+  let _refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_refreshing)return;_refreshing=true;location.reload()});
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(reg=>{try{reg.update()}catch(e){}}).catch(()=>{}));
+}
 </script>
 </body>
 </html>
